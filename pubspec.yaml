@@ -1,0 +1,45 @@
+name: mukhla_splitw
+description: MUKHLA - Kharche Pai Charcha - Premium Expense Tracker
+
+publish_to: 'none'
+
+version: 2.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  cloud_firestore: ^4.13.6
+  firebase_messaging: ^14.6.9
+  firebase_storage: ^11.5.6
+
+  # Google Sign In
+  google_sign_in: ^6.1.6
+
+  # State Management
+  provider: ^6.1.1
+
+  # UI Components
+  cupertino_icons: ^1.0.6
+
+  # Utils
+  intl: ^0.18.1
+  uuid: ^4.3.3
+
+  # Share & Utils
+  share_plus: ^7.2.1
+  fluttertoast: ^8.2.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
