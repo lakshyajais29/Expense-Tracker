@@ -7,8 +7,8 @@ plugins {
 
 android {
     namespace = "com.mukhla.splitw"
-    compileSdk = 36  // ← CHANGED to 36
-    ndkVersion = "27.0.12077973"  // ← CHANGED to 27
+    compileSdk = 36
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -40,5 +40,5 @@ flutter {
 }
 
 dependencies {
-    implementation("androidx.multidex:multidex:2.0.1")  // ← ADD THIS
+    implementation("androidx.multidex:multidex:2.0.1")
 }

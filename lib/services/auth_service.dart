@@ -1,6 +1,7 @@
 // lib/services/auth_service.dart
 
 import 'package:firebase_auth/firebase_auth.dart';
+// ✅ Added this import
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -81,7 +82,7 @@ class AuthService {
       print('Google Sign-In successful: ${userCredential.user?.email}');
       return userCredential;
 
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseException catch (e) { // ✅ Fixed: Changed from FirebaseAuthException
       print('Firebase Auth Error: ${e.code} - ${e.message}');
       return null;
     } catch (e) {
