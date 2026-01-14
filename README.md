@@ -107,7 +107,7 @@ lib/
 
 ## 👨‍💻 Developer
 
-**Shreya Jaiswal** - AI Automation Engineer  
+**Lakshya Jaiswal** - Developer 
 Building production-ready apps with Flutter & Firebase
 
 ---
