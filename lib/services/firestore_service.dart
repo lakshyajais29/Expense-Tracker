@@ -1,16 +1,9 @@
-// lib/services/firestore_service.dart
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/app_models.dart';
 
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // ========================================================================
-  // USER OPERATIONS
-  // ========================================================================
-
-  // Search users by name
   Future<List<AppUser>> searchUsers(String query) async {
     if (query.isEmpty) return [];
 
@@ -45,7 +38,7 @@ class FirestoreService {
     }
   }
 
-  // Add friend
+
   Future<bool> addFriend(String currentUserId, String friendId) async {
     try {
       // Add to current user's friends
@@ -65,7 +58,7 @@ class FirestoreService {
     }
   }
 
-  // Get friends list
+
   Stream<List<AppUser>> getFriends(String userId) {
     return _firestore
         .collection('users')
@@ -86,11 +79,7 @@ class FirestoreService {
     });
   }
 
-  // ========================================================================
-  // GROUP OPERATIONS
-  // ========================================================================
 
-  // Create group
   Future<String?> createGroup({
     required String name,
     required String icon,
@@ -114,7 +103,7 @@ class FirestoreService {
     }
   }
 
-  // Get groups for user
+
   Stream<List<ExpenseGroup>> getGroups(String userId) {
     return _firestore
         .collection('groups')
@@ -126,7 +115,7 @@ class FirestoreService {
         .toList());
   }
 
-  // Get group by ID
+
   Future<ExpenseGroup?> getGroup(String groupId) async {
     try {
       final doc = await _firestore.collection('groups').doc(groupId).get();
@@ -140,11 +129,7 @@ class FirestoreService {
     }
   }
 
-  // ========================================================================
-  // EXPENSE OPERATIONS
-  // ========================================================================
 
-  // Add expense
   Future<String?> addExpense({
     required String groupId,
     required double amount,

@@ -37,24 +37,37 @@ class AuthService {
     }
   }
 
-  // Google Sign-In
+  // Google Sign-In (Updated for v7.x)
   Future<UserCredential?> signInWithGoogle() async {
     try {
+      // Sign out first to force account picker
+      await _googleSignIn.signOut();
+
       // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
-        return null; // User canceled
+        print('User cancelled Google Sign-In');
+        return null;
       }
 
-      // Obtain the auth details from the request
+      // Obtain the auth details
       final GoogleSignInAuthentication googleAuth =
       await googleUser.authentication;
 
+      // Get tokens
+      final String? accessToken = googleAuth.accessToken;
+      final String? idToken = googleAuth.idToken;
+
+      if (accessToken == null || idToken == null) {
+        print('Failed to get tokens');
+        return null;
+      }
+
       // Create a new credential
       final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+        accessToken: accessToken,
+        idToken: idToken,
       );
 
       // Sign in to Firebase
@@ -62,11 +75,15 @@ class AuthService {
 
       // Check if this is a new user
       if (userCredential.additionalUserInfo?.isNewUser ?? false) {
-        // Create basic user document
         await _createUserDocument(userCredential.user!);
       }
 
+      print('Google Sign-In successful: ${userCredential.user?.email}');
       return userCredential;
+
+    } on FirebaseAuthException catch (e) {
+      print('Firebase Auth Error: ${e.code} - ${e.message}');
+      return null;
     } catch (e) {
       print('Error signing in with Google: $e');
       return null;
@@ -78,11 +95,14 @@ class AuthService {
     try {
       await _firestore.collection('users').doc(user.uid).set({
         'uid': user.uid,
-        'email': user.email,
+        'email': user.email ?? '',
         'photoURL': user.photoURL,
         'createdAt': FieldValue.serverTimestamp(),
         'profileComplete': false,
+        'friendIds': [],
       }, SetOptions(merge: true));
+
+      print('User document created: ${user.uid}');
     } catch (e) {
       print('Error creating user document: $e');
     }
@@ -96,12 +116,17 @@ class AuthService {
     if (currentUser == null) return false;
 
     try {
-      await _firestore.collection('users').doc(currentUser!.uid).update({
+      await _firestore.collection('users').doc(currentUser!.uid).set({
+        'uid': currentUser!.uid,
+        'email': currentUser!.email ?? '',
         'name': name,
         'avatar': avatar,
         'profileComplete': true,
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+        'friendIds': [],
+      }, SetOptions(merge: true));
+
+      print('Profile completed: $name');
       return true;
     } catch (e) {
       print('Error completing profile: $e');
@@ -119,6 +144,11 @@ class AuthService {
           .doc(currentUser!.uid)
           .get();
 
+      if (!doc.exists) {
+        print('User document does not exist');
+        return null;
+      }
+
       return doc.data();
     } catch (e) {
       print('Error getting user data: $e');
@@ -129,10 +159,9 @@ class AuthService {
   // Sign out
   Future<void> signOut() async {
     try {
-      await Future.wait([
-        _auth.signOut(),
-        _googleSignIn.signOut(),
-      ]);
+      await _googleSignIn.signOut();
+      await _auth.signOut();
+      print('User signed out successfully');
     } catch (e) {
       print('Error signing out: $e');
     }

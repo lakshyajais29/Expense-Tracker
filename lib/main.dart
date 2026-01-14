@@ -4,10 +4,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
-// Import screens (create these files)
-// import 'screens/auth/google_auth_screen.dart';
-// import 'screens/auth/profile_setup_screen.dart';
-// import 'screens/home/home_dashboard.dart';
+// Import actual screens
+import 'screens/auth/google_auth_screen.dart';
+import 'screens/auth/profile_setup_screen.dart';
+import 'screens/home/home_dashboard.dart';
+import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -125,28 +126,48 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
+    final authService = AuthService();
+
     // Check if user is logged in
-    final user = FirebaseAuth.instance.currentUser;
+    final user = authService.currentUser;
 
     if (user != null) {
-      // User is logged in - go to home
-      // TODO: Check if profile is complete
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-          const ComingSoonScreen(message: 'Home Dashboard coming soon!'),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 800),
-        ),
-      );
+      // Check if profile is complete
+      final isComplete = await authService.isProfileComplete();
+
+      if (!mounted) return;
+
+      if (isComplete) {
+        // Go to home
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+            const HomeDashboard(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 800),
+          ),
+        );
+      } else {
+        // Go to profile setup
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+            const ProfileSetupScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 800),
+          ),
+        );
+      }
     } else {
       // User not logged in - go to auth
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
-          const GoogleAuthPlaceholder(),
+          const GoogleAuthScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -295,197 +316,6 @@ class _SplashScreenState extends State<SplashScreen>
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// GOOGLE AUTH PLACEHOLDER (Use actual GoogleAuthScreen once files are created)
-// ============================================================================
-class GoogleAuthPlaceholder extends StatelessWidget {
-  const GoogleAuthPlaceholder({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF7C3AED),
-              Color(0xFFDB2777),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    '💸',
-                    style: TextStyle(fontSize: 100),
-                  ),
-                  const SizedBox(height: 40),
-                  const Text(
-                    'MUKHLA',
-                    style: TextStyle(
-                      fontSize: 56,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: 4,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Kharche Pai Charcha',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 60),
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          '🚀 Next Steps:',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildStep('1. Copy auth_service.dart to lib/services/'),
-                        _buildStep('2. Copy app_models.dart to lib/models/'),
-                        _buildStep('3. Copy screen files to lib/screens/'),
-                        _buildStep('4. Uncomment imports in main.dart'),
-                        _buildStep('5. Hot reload & test! ⚡'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  ElevatedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Setup Instructions'),
-                          content: const Text(
-                            'Check the artifacts panel for:\n\n'
-                                '• auth_service.dart\n'
-                                '• app_models.dart\n'
-                                '• auth & profile screens\n'
-                                '• home_dashboard.dart\n\n'
-                                'Copy these files to your project!',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Got it!'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF7C3AED),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: const Text(
-                      'View Setup Guide',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStep(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          const Icon(Icons.check_circle, color: Colors.white, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// COMING SOON PLACEHOLDER
-// ============================================================================
-class ComingSoonScreen extends StatelessWidget {
-  final String message;
-
-  const ComingSoonScreen({
-    Key? key,
-    required this.message,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('MUKHLA'),
-        backgroundColor: const Color(0xFF7C3AED),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('🚀', style: TextStyle(fontSize: 80)),
-            const SizedBox(height: 24),
-            Text(
-              message,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
         ),
       ),
     );
