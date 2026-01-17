@@ -2,13 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../models/app_models.dart';
 import '../friends/add_friends_screen.dart';
-import '../groups/create_group_screen.dart';
+import '../groups/create_group_screen.dart' as groups;
 import '../groups/group_details_screen.dart';
+
 
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({Key? key}) : super(key: key);
@@ -97,12 +97,12 @@ class _HomeDashboardState extends State<HomeDashboard>
                   ],
                 ),
               ),
+              // ✅ Fixed: Bottom buttons inside Column instead of FloatingActionButton
+              _buildBottomButtons(),
             ],
           ),
         ),
       ),
-      floatingActionButton: _buildFloatingActionButton(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -210,6 +210,7 @@ class _HomeDashboardState extends State<HomeDashboard>
           fontSize: 14,
           fontWeight: FontWeight.bold,
         ),
+        dividerColor: Colors.transparent,
         tabs: const [
           Tab(text: '👥 Groups'),
           Tab(text: '👫 Friends'),
@@ -227,21 +228,19 @@ class _HomeDashboardState extends State<HomeDashboard>
           return const Center(child: CircularProgressIndicator());
         }
 
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('Error: ${snapshot.error}'),
+          );
+        }
+
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return _buildEmptyState(
             emoji: '👥',
             title: 'No Groups Yet',
             subtitle: 'Create a group and start\nsplitting expenses!',
             buttonText: 'Create First Group',
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CreateGroupScreen()),
-              );
-              if (result == true) {
-                setState(() {});
-              }
-            },
+            onPressed: _navigateToCreateGroup,
           );
         }
 
@@ -364,7 +363,7 @@ class _HomeDashboardState extends State<HomeDashboard>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '₹${totalExpenses.toStringAsFixed(2)}',
+                        '₹${totalExpenses.toStringAsFixed(0)}',
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -385,7 +384,7 @@ class _HomeDashboardState extends State<HomeDashboard>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '₹${userBalance.abs().toStringAsFixed(2)}',
+                        '₹${userBalance.abs().toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -417,12 +416,7 @@ class _HomeDashboardState extends State<HomeDashboard>
             title: 'No Friends Added',
             subtitle: 'Search and add your squad\nto start tracking expenses!',
             buttonText: 'Add Friends',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddFriendsScreen()),
-              );
-            },
+            onPressed: _navigateToAddFriends,
           );
         }
 
@@ -519,10 +513,7 @@ class _HomeDashboardState extends State<HomeDashboard>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              emoji,
-              style: const TextStyle(fontSize: 80),
-            ),
+            Text(emoji, style: const TextStyle(fontSize: 80)),
             const SizedBox(height: 24),
             Text(
               title,
@@ -546,15 +537,13 @@ class _HomeDashboardState extends State<HomeDashboard>
             ElevatedButton(
               onPressed: onPressed,
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 0,
                 backgroundColor: const Color(0xFF7C3AED),
+                foregroundColor: Colors.white,
               ),
               child: Text(
                 buttonText,
@@ -570,36 +559,28 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  Widget _buildFloatingActionButton() {
+  // ✅ Fixed: Bottom buttons with proper padding to prevent overflow
+  Widget _buildBottomButtons() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildQuickActionButton(
-            icon: Icons.group_add,
-            label: 'Add Group',
-            gradient: const [Color(0xFF7C3AED), Color(0xFFDB2777)],
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CreateGroupScreen()),
-              );
-              if (result == true) {
-                setState(() {});
-              }
-            },
+          Expanded(
+            child: _buildQuickActionButton(
+              icon: Icons.group_add,
+              label: 'Add Group',
+              gradient: const [Color(0xFF7C3AED), Color(0xFFDB2777)],
+              onTap: _navigateToCreateGroup,
+            ),
           ),
-          _buildQuickActionButton(
-            icon: Icons.person_add,
-            label: 'Add Friends',
-            gradient: const [Color(0xFFDB2777), Color(0xFFF59E0B)],
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddFriendsScreen()),
-              );
-            },
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildQuickActionButton(
+              icon: Icons.person_add,
+              label: 'Add Friends',
+              gradient: const [Color(0xFFDB2777), Color(0xFFF59E0B)],
+              onTap: _navigateToAddFriends,
+            ),
           ),
         ],
       ),
@@ -614,8 +595,9 @@ class _HomeDashboardState extends State<HomeDashboard>
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: gradient),
           borderRadius: BorderRadius.circular(16),
@@ -628,21 +610,41 @@ class _HomeDashboardState extends State<HomeDashboard>
           ],
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 24),
+            Icon(icon, color: Colors.white, size: 22),
             const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _navigateToCreateGroup() async {
+    final result = await Navigator.push(
+      context,
+        MaterialPageRoute(builder: (context) => const groups.CreateGroupScreen()),
+    );
+    if (result == true && mounted) {
+      setState(() {}); // Refresh the page
+    }
+  }
+
+  void _navigateToAddFriends() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddFriendsScreen()),
     );
   }
 

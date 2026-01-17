@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'firebase_options.dart';
 
 // Import actual screens
 import 'screens/auth/google_auth_screen.dart';
@@ -13,10 +11,11 @@ import 'services/auth_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // ✅ REMOVED Firebase.initializeApp - FirebaseInitProvider handles it automatically
+  // Just wait for it to be ready
+  await Firebase.apps.isNotEmpty
+      ? Future.value(Firebase.app())
+      : Firebase.initializeApp();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
@@ -143,7 +142,8 @@ class _SplashScreenState extends State<SplashScreen>
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
             const HomeDashboard(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return FadeTransition(opacity: animation, child: child);
             },
             transitionDuration: const Duration(milliseconds: 800),
@@ -155,7 +155,8 @@ class _SplashScreenState extends State<SplashScreen>
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
             const ProfileSetupScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return FadeTransition(opacity: animation, child: child);
             },
             transitionDuration: const Duration(milliseconds: 800),
