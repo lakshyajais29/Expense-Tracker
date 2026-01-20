@@ -1,8 +1,10 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-// Import actual screens
+// Screen imports
 import 'screens/auth/google_auth_screen.dart';
 import 'screens/auth/profile_setup_screen.dart';
 import 'screens/home/home_dashboard.dart';
@@ -11,11 +13,10 @@ import 'services/auth_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ REMOVED Firebase.initializeApp - FirebaseInitProvider handles it automatically
-  // Just wait for it to be ready
-  await Firebase.apps.isNotEmpty
-      ? Future.value(Firebase.app())
-      : Firebase.initializeApp();
+  // Firebase initialization
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp();
+  }
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
@@ -48,7 +49,6 @@ class MukhlaApp extends StatelessWidget {
           seedColor: const Color(0xFF9333EA),
           brightness: Brightness.light,
         ),
-        fontFamily: 'Inter',
         scaffoldBackgroundColor: const Color(0xFFF5F5F7),
       ),
       darkTheme: ThemeData(
@@ -57,7 +57,6 @@ class MukhlaApp extends StatelessWidget {
           seedColor: const Color(0xFF9333EA),
           brightness: Brightness.dark,
         ),
-        fontFamily: 'Inter',
         scaffoldBackgroundColor: const Color(0xFF121212),
       ),
       themeMode: ThemeMode.system,
@@ -67,7 +66,7 @@ class MukhlaApp extends StatelessWidget {
 }
 
 // ============================================================================
-// SPLASH SCREEN - Premium Animation
+// SPLASH SCREEN
 // ============================================================================
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -81,7 +80,6 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _slideAnimation;
 
   @override
   void initState() {
@@ -110,13 +108,6 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    _slideAnimation = Tween<double>(begin: 50.0, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
-      ),
-    );
-
     _controller.forward();
   }
 
@@ -126,54 +117,25 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     final authService = AuthService();
-
-    // Check if user is logged in
     final user = authService.currentUser;
 
     if (user != null) {
-      // Check if profile is complete
       final isComplete = await authService.isProfileComplete();
 
       if (!mounted) return;
 
       if (isComplete) {
-        // Go to home
         Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-            const HomeDashboard(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 800),
-          ),
+          MaterialPageRoute(builder: (context) => HomeDashboard()),
         );
       } else {
-        // Go to profile setup
         Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-            const ProfileSetupScreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 800),
-          ),
+          MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
         );
       }
     } else {
-      // User not logged in - go to auth
       Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-          const GoogleAuthScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 800),
-        ),
+        MaterialPageRoute(builder: (context) => const GoogleAuthScreen()),
       );
     }
   }
@@ -193,9 +155,9 @@ class _SplashScreenState extends State<SplashScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF7C3AED), // Vibrant Purple
-              Color(0xFFDB2777), // Hot Pink
-              Color(0xFFF59E0B), // Amber
+              Color(0xFF7C3AED),
+              Color(0xFFDB2777),
+              Color(0xFFF59E0B),
             ],
           ),
         ),
@@ -224,10 +186,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ],
                     ),
                     child: const Center(
-                      child: Text(
-                        '💸',
-                        style: TextStyle(fontSize: 70),
-                      ),
+                      child: Text('💸', style: TextStyle(fontSize: 70)),
                     ),
                   ),
                 ),
@@ -237,49 +196,28 @@ class _SplashScreenState extends State<SplashScreen>
                 // App Name
                 FadeTransition(
                   opacity: _fadeAnimation,
-                  child: AnimatedBuilder(
-                    animation: _slideAnimation,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(0, _slideAnimation.value),
-                        child: child,
-                      );
-                    },
-                    child: Column(
-                      children: [
-                        ShaderMask(
-                          shaderCallback: (bounds) => const LinearGradient(
-                            colors: [Colors.white, Colors.white70],
-                          ).createShader(bounds),
-                          child: const Text(
-                            'MUKHLA',
-                            style: TextStyle(
-                              fontSize: 64,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: 4,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black26,
-                                  blurRadius: 20,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                          ),
+                  child: const Column(
+                    children: [
+                      Text(
+                        'MUKHLA',
+                        style: TextStyle(
+                          fontSize: 64,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 4,
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Kharche Pai Charcha',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            letterSpacing: 1,
-                          ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        'Kharche Pai Charcha',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          letterSpacing: 1,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
 

@@ -1,14 +1,12 @@
 // lib/screens/home/home_dashboard.dart
 
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../models/app_models.dart';
 import '../friends/add_friends_screen.dart';
-import '../groups/create_group_screen.dart' as groups;
+import '../groups/create_group_screen.dart' as group_screen;
 import '../groups/group_details_screen.dart';
-
 
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({Key? key}) : super(key: key);
@@ -49,9 +47,7 @@ class _HomeDashboardState extends State<HomeDashboard>
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -64,29 +60,26 @@ class _HomeDashboardState extends State<HomeDashboard>
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: Container(
+          decoration: _buildGradientBackground(),
+          child: const Center(
+            child: CircularProgressIndicator(color: Color(0xFF7C3AED)),
+          ),
+        ),
       );
     }
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF3E8FF),
-              Color(0xFFFCE7F3),
-              Colors.white,
-            ],
-          ),
-        ),
+        decoration: _buildGradientBackground(),
         child: SafeArea(
           child: Column(
             children: [
               _buildAppBar(),
+              const SizedBox(height: 8),
               _buildTabBar(),
+              const SizedBox(height: 16),
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
@@ -97,7 +90,6 @@ class _HomeDashboardState extends State<HomeDashboard>
                   ],
                 ),
               ),
-              // ✅ Fixed: Bottom buttons inside Column instead of FloatingActionButton
               _buildBottomButtons(),
             ],
           ),
@@ -106,14 +98,39 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
+  BoxDecoration _buildGradientBackground() {
+    return const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFFFAF5FF),
+          Color(0xFFFDF2F8),
+          Color(0xFFFFFFFF),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAppBar() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C3AED).withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Container(
-            width: 50,
-            height: 50,
+            padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
@@ -121,58 +138,69 @@ class _HomeDashboardState extends State<HomeDashboard>
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF7C3AED).withOpacity(0.3),
+                  color: const Color(0xFF7C3AED).withOpacity(0.4),
                   blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  spreadRadius: 2,
                 ),
               ],
             ),
-            child: Center(
-              child: Text(
-                _currentUser?.avatar ?? '😎',
-                style: const TextStyle(fontSize: 28),
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+              ),
+              child: Center(
+                child: Text(
+                  _currentUser?.avatar ?? '😎',
+                  style: const TextStyle(fontSize: 26),
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Hey, ${_currentUser?.name ?? 'Friend'}! 👋',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937),
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Hey, ${_currentUser?.name?.split(' ').first ?? 'Friend'}!',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Text('👋', style: TextStyle(fontSize: 18)),
+                  ],
                 ),
+                const SizedBox(height: 2),
                 Text(
                   'Kharche manage karte hai!',
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                    fontSize: 13,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
           Container(
-            width: 44,
-            height: 44,
             decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: const Color(0xFFF3E8FF),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: IconButton(
-              icon: const Icon(Icons.settings_outlined, size: 22),
+              icon: const Icon(
+                Icons.settings_outlined,
+                size: 22,
+                color: Color(0xFF7C3AED),
+              ),
               onPressed: _showSettingsSheet,
             ),
           ),
@@ -184,14 +212,14 @@ class _HomeDashboardState extends State<HomeDashboard>
   Widget _buildTabBar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
             offset: const Offset(0, 2),
           ),
         ],
@@ -199,17 +227,14 @@ class _HomeDashboardState extends State<HomeDashboard>
       child: TabBar(
         controller: _tabController,
         indicator: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(15),
           gradient: const LinearGradient(
-            colors: [Color(0xFF7C3AED), Color(0xFFDB2777)],
+            colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
           ),
         ),
         labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey[600],
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
+        unselectedLabelColor: Colors.grey[500],
+        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         dividerColor: Colors.transparent,
         tabs: const [
           Tab(text: '👥 Groups'),
@@ -225,13 +250,13 @@ class _HomeDashboardState extends State<HomeDashboard>
       stream: _firestoreService.getGroups(_currentUser?.uid ?? ''),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF7C3AED)),
+          );
         }
 
         if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
-          );
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -246,15 +271,12 @@ class _HomeDashboardState extends State<HomeDashboard>
 
         final groups = snapshot.data!;
         return RefreshIndicator(
-          onRefresh: () async {
-            setState(() {});
-          },
+          color: const Color(0xFF7C3AED),
+          onRefresh: () async => setState(() {}),
           child: ListView.builder(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
             itemCount: groups.length,
-            itemBuilder: (context, index) {
-              return _buildGroupCard(groups[index]);
-            },
+            itemBuilder: (context, index) => _buildGroupCard(groups[index]),
           ),
         );
       },
@@ -262,55 +284,57 @@ class _HomeDashboardState extends State<HomeDashboard>
   }
 
   Widget _buildGroupCard(ExpenseGroup group) {
-    final totalExpenses = group.getTotalExpenses();
-    final memberCount = group.getMemberCount();
     final userBalance = group.balances[_currentUser?.uid] ?? 0;
+    final isPositive = userBalance >= 0;
 
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => GroupDetailsScreen(group: group),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C3AED).withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GroupDetailsScreen(group: group),
+              ),
+            );
+          },
+          onLongPress: () => _showGroupOptions(group),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
               children: [
                 Container(
-                  width: 50,
-                  height: 50,
+                  width: 54,
+                  height: 54,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF7C3AED), Color(0xFFDB2777)],
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF7C3AED).withOpacity(0.1),
+                        const Color(0xFFDB2777).withOpacity(0.1),
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
-                    child: Text(
-                      group.icon,
-                      style: const TextStyle(fontSize: 28),
-                    ),
+                    child: Text(group.icon, style: const TextStyle(fontSize: 28)),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,85 +342,56 @@ class _HomeDashboardState extends State<HomeDashboard>
                       Text(
                         group.name,
                         style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
                           color: Color(0xFF1F2937),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '$memberCount members',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
+                        '${group.getMemberCount()} members',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Colors.grey,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3E8FF),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Total Spent',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '₹${totalExpenses.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF7C3AED),
-                        ),
-                      ),
-                    ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isPositive
+                        ? const Color(0xFF10B981).withOpacity(0.1)
+                        : const Color(0xFFEF4444).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        userBalance >= 0 ? 'You get' : 'You owe',
+                        isPositive ? 'You get' : 'You owe',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: isPositive
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444),
                         ),
                       ),
-                      const SizedBox(height: 4),
                       Text(
                         '₹${userBalance.abs().toStringAsFixed(0)}',
                         style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: userBalance >= 0 ? Colors.green : Colors.red,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: isPositive
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -407,14 +402,16 @@ class _HomeDashboardState extends State<HomeDashboard>
       stream: _firestoreService.getFriends(_currentUser?.uid ?? ''),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF7C3AED)),
+          );
         }
 
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return _buildEmptyState(
             emoji: '👫',
             title: 'No Friends Added',
-            subtitle: 'Search and add your squad\nto start tracking expenses!',
+            subtitle: 'Add friends to start\ntracking shared expenses!',
             buttonText: 'Add Friends',
             onPressed: _navigateToAddFriends,
           );
@@ -422,42 +419,42 @@ class _HomeDashboardState extends State<HomeDashboard>
 
         final friends = snapshot.data!;
         return ListView.builder(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
           itemCount: friends.length,
           itemBuilder: (context, index) {
             final friend = friends[index];
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 12,
                   ),
                 ],
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 50,
-                    height: 50,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF7C3AED), Color(0xFFDB2777)],
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF7C3AED).withOpacity(0.1),
+                          const Color(0xFFDB2777).withOpacity(0.1),
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: Center(
-                      child: Text(
-                        friend.avatar,
-                        style: const TextStyle(fontSize: 28),
-                      ),
+                      child: Text(friend.avatar, style: const TextStyle(fontSize: 24)),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -465,16 +462,13 @@ class _HomeDashboardState extends State<HomeDashboard>
                         Text(
                           friend.name,
                           style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         Text(
                           friend.email,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                         ),
                       ],
                     ),
@@ -494,9 +488,7 @@ class _HomeDashboardState extends State<HomeDashboard>
       title: 'No Activity Yet',
       subtitle: 'Your expense activity\nwill appear here!',
       buttonText: 'View Groups',
-      onPressed: () {
-        _tabController.animateTo(0);
-      },
+      onPressed: () => _tabController.animateTo(0),
     );
   }
 
@@ -508,77 +500,62 @@ class _HomeDashboardState extends State<HomeDashboard>
     required VoidCallback onPressed,
   }) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 80)),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1F2937),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 80)),
+          const SizedBox(height: 24),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1F2937),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 15, color: Colors.grey[500]),
+          ),
+          const SizedBox(height: 28),
+          ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7C3AED),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: onPressed,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-                backgroundColor: const Color(0xFF7C3AED),
-                foregroundColor: Colors.white,
-              ),
-              child: Text(
-                buttonText,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
+            child: Text(buttonText),
+          ),
+        ],
       ),
     );
   }
 
-  // ✅ Fixed: Bottom buttons with proper padding to prevent overflow
   Widget _buildBottomButtons() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       child: Row(
         children: [
           Expanded(
-            child: _buildQuickActionButton(
-              icon: Icons.group_add,
+            child: _buildActionButton(
+              icon: Icons.group_add_outlined,
               label: 'Add Group',
-              gradient: const [Color(0xFF7C3AED), Color(0xFFDB2777)],
+              colors: [const Color(0xFF7C3AED), const Color(0xFF9333EA)],
               onTap: _navigateToCreateGroup,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _buildQuickActionButton(
-              icon: Icons.person_add,
-              label: 'Add Friends',
-              gradient: const [Color(0xFFDB2777), Color(0xFFF59E0B)],
+            child: _buildActionButton(
+              icon: Icons.person_add_outlined,
+              label: 'Add Friend',
+              colors: [const Color(0xFFDB2777), const Color(0xFFF59E0B)],
               onTap: _navigateToAddFriends,
             ),
           ),
@@ -587,42 +564,39 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  Widget _buildQuickActionButton({
+  Widget _buildActionButton({
     required IconData icon,
     required String label,
-    required List<Color> gradient,
+    required List<Color> colors,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: gradient),
-          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(colors: colors),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: gradient[0].withOpacity(0.3),
+              color: colors[0].withOpacity(0.35),
               blurRadius: 12,
-              offset: const Offset(0, 6),
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
+            Icon(icon, color: Colors.white, size: 20),
             const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-                overflow: TextOverflow.ellipsis,
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -634,11 +608,9 @@ class _HomeDashboardState extends State<HomeDashboard>
   void _navigateToCreateGroup() async {
     final result = await Navigator.push(
       context,
-        MaterialPageRoute(builder: (context) => const groups.CreateGroupScreen()),
+      MaterialPageRoute(builder: (context) => const CreateGroupScreen()),
     );
-    if (result == true && mounted) {
-      setState(() {}); // Refresh the page
-    }
+    if (result == true && mounted) setState(() {});
   }
 
   void _navigateToAddFriends() {
@@ -646,6 +618,129 @@ class _HomeDashboardState extends State<HomeDashboard>
       context,
       MaterialPageRoute(builder: (context) => const AddFriendsScreen()),
     );
+  }
+
+  void _showGroupOptions(ExpenseGroup group) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF7C3AED), Color(0xFFDB2777)],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Center(
+                    child: Text(group.icon, style: const TextStyle(fontSize: 26)),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        group.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${group.getMemberCount()} members',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.delete_outline, color: Colors.red),
+              ),
+              title: const Text(
+                'Delete Group',
+                style: TextStyle(fontWeight: FontWeight.w600, color: Colors.red),
+              ),
+              subtitle: const Text('This will delete all expenses too'),
+              onTap: () {
+                Navigator.pop(context);
+                _confirmDeleteGroup(group);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteGroup(ExpenseGroup group) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Group?'),
+        content: Text('Are you sure you want to delete "${group.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _deleteGroup(group);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteGroup(ExpenseGroup group) async {
+    final success = await _firestoreService.deleteGroup(group.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? '"${group.name}" deleted!' : 'Failed to delete'),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+      if (success) setState(() {});
+    }
   }
 
   void _showSettingsSheet() {
@@ -656,7 +751,7 @@ class _HomeDashboardState extends State<HomeDashboard>
         padding: const EdgeInsets.all(24),
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -671,15 +766,20 @@ class _HomeDashboardState extends State<HomeDashboard>
             ),
             const SizedBox(height: 24),
             ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Sign Out'),
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.logout, color: Colors.red),
+              ),
+              title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(_currentUser?.email ?? ''),
               onTap: () async {
                 await _authService.signOut();
                 if (mounted) {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/',
-                        (route) => false,
-                  );
+                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
                 }
               },
             ),

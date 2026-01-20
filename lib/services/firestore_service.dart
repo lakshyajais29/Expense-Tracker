@@ -38,7 +38,6 @@ class FirestoreService {
     }
   }
 
-
   Future<bool> addFriend(String currentUserId, String friendId) async {
     try {
       // Add to current user's friends
@@ -57,7 +56,6 @@ class FirestoreService {
       return false;
     }
   }
-
 
   Stream<List<AppUser>> getFriends(String userId) {
     return _firestore
@@ -79,7 +77,6 @@ class FirestoreService {
     });
   }
 
-
   Future<String?> createGroup({
     required String name,
     required String icon,
@@ -94,7 +91,7 @@ class FirestoreService {
         'createdBy': createdBy,
         'createdAt': FieldValue.serverTimestamp(),
         'lastActivity': FieldValue.serverTimestamp(),
-        'balances': {}, // Initialize empty balances
+        'balances': {},
       });
       return docRef.id;
     } catch (e) {
@@ -102,7 +99,6 @@ class FirestoreService {
       return null;
     }
   }
-
 
   Stream<List<ExpenseGroup>> getGroups(String userId) {
     return _firestore
@@ -114,7 +110,6 @@ class FirestoreService {
         .map((doc) => ExpenseGroup.fromFirestore(doc))
         .toList());
   }
-
 
   Future<ExpenseGroup?> getGroup(String groupId) async {
     try {
@@ -129,7 +124,6 @@ class FirestoreService {
     }
   }
 
-
   Future<String?> addExpense({
     required String groupId,
     required double amount,
@@ -141,7 +135,6 @@ class FirestoreService {
     required Map<String, double> splitDetails,
   }) async {
     try {
-      // Add expense
       final docRef = await _firestore.collection('expenses').add({
         'groupId': groupId,
         'amount': amount,
@@ -154,10 +147,8 @@ class FirestoreService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // Update group balances
       await _updateGroupBalances(groupId);
 
-      // Update group last activity
       await _firestore.collection('groups').doc(groupId).update({
         'lastActivity': FieldValue.serverTimestamp(),
       });
@@ -169,7 +160,6 @@ class FirestoreService {
     }
   }
 
-  // Get expenses for group
   Stream<List<Expense>> getExpenses(String groupId) {
     return _firestore
         .collection('expenses')
@@ -193,10 +183,31 @@ class FirestoreService {
     }
   }
 
+  // ✅ DELETE GROUP - Add this method here!
+  Future<bool> deleteGroup(String groupId) async {
+    try {
+      // First delete all expenses in this group
+      final expensesSnapshot = await _firestore
+          .collection('expenses')
+          .where('groupId', isEqualTo: groupId)
+          .get();
+
+      for (final doc in expensesSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      // Then delete the group
+      await _firestore.collection('groups').doc(groupId).delete();
+      return true;
+    } catch (e) {
+      print('Error deleting group: $e');
+      return false;
+    }
+  }
+
   // Update group balances
   Future<void> _updateGroupBalances(String groupId) async {
     try {
-      // Get all expenses for this group
       final expensesSnapshot = await _firestore
           .collection('expenses')
           .where('groupId', isEqualTo: groupId)
@@ -206,20 +217,16 @@ class FirestoreService {
           .map((doc) => Expense.fromFirestore(doc))
           .toList();
 
-      // Calculate balances
       final balances = <String, double>{};
 
       for (final expense in expenses) {
-        // Add amount to payer
         balances[expense.paidBy] = (balances[expense.paidBy] ?? 0) + expense.amount;
 
-        // Subtract share from each person
         for (final entry in expense.splitDetails.entries) {
           balances[entry.key] = (balances[entry.key] ?? 0) - entry.value;
         }
       }
 
-      // Update group document
       await _firestore.collection('groups').doc(groupId).update({
         'balances': balances,
       });
@@ -240,7 +247,6 @@ class FirestoreService {
       final balances = Map<String, double>.from(group.balances);
       final settlements = <Settlement>[];
 
-      // Separate creditors (positive) and debtors (negative)
       final creditors = <MapEntry<String, double>>[];
       final debtors = <MapEntry<String, double>>[];
 
@@ -252,11 +258,9 @@ class FirestoreService {
         }
       });
 
-      // Sort
       creditors.sort((a, b) => b.value.compareTo(a.value));
       debtors.sort((a, b) => a.value.compareTo(b.value));
 
-      // Calculate minimum transactions
       int i = 0, j = 0;
       while (i < creditors.length && j < debtors.length) {
         final creditor = creditors[i];
@@ -274,7 +278,6 @@ class FirestoreService {
           ));
         }
 
-        // Update remaining amounts
         creditors[i] = MapEntry(creditor.key, creditor.value - amount);
         debtors[j] = MapEntry(debtor.key, debtor.value + amount);
 
